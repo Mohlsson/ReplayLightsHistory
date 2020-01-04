@@ -1,0 +1,7 @@
+persons:
+  name: Persons
+  entities:
+    - person.me
+    - person.wife
+    - person.child1
+    - person.child2
