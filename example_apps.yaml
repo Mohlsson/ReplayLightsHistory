@@ -1,0 +1,4 @@
+replay_lights:
+  module: replay_lights
+  class: ReplayLights
+  numberOfDaysBack: 7
