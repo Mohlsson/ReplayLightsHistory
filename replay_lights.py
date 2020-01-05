@@ -22,7 +22,7 @@ class ReplayLights(hass.Hass):
   def scheduleNextEvent(self):
      conn = sqlite3.connect('/config/home-assistant_v2.db')
      c = conn.cursor()
-     c.execute(f'SELECT event_data FROM events WHERE time_fired > datetime("now","localtime","-{self.numberOfDaysBack} days","+1 second") AND event_data like "%light.%"')
+     c.execute(f'SELECT event_data FROM events WHERE time_fired > datetime("now","localtime","-{self.numberOfDaysBack} days","+1 second") AND event_data LIKE "%light.%" AND event_data LIKE "%entity_id%"')
      event = json.loads(c.fetchone()[0])
      self.entity_id = event["entity_id"]
      self.event_new_state = event["new_state"]["state"]
