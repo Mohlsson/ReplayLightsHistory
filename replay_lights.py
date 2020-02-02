@@ -18,12 +18,12 @@ class ReplayLights(hass.Hass):
      self.numberOfDaysBack = self.args["numberOfDaysBack"]
      self.run_hourly(self.scheduleNextEventBatch, datetime.now() + timedelta(seconds=5))
 
-
   def scheduleNextEventBatch(self,kwargs):
      self.log("scheduling")
      conn = sqlite3.connect('/config/home-assistant_v2.db')
      c = conn.cursor()
-     for row in c.execute(f'SELECT event_data FROM events WHERE time_fired > datetime("now","localtime","-{self.numberOfDaysBack} days","+1 minutes") AND time_fired < datetime("now","localtime","-{self.numberOfDaysBack} days","+61 minut$        try:
+     for row in c.execute(f'SELECT event_data FROM events WHERE time_fired > datetime("now","localtime","-{self.numberOfDaysBack} days","+1 minutes") AND time_fired < datetime("now","localtime","-{self.numberOfDaysBack} days","+61 minutes") AND event_data like "%light%" AND NOT event_data like "%all_lights%"'):
+        try:
            event = json.loads(row[0])
            entity_id = event["entity_id"]
            event_new_state = event["new_state"]["state"]
@@ -40,3 +40,4 @@ class ReplayLights(hass.Hass):
      else:
         self.call_service(f"light/turn_{kwargs['event_new_state']}", entity_id = kwargs['entity_id'])
         self.log(f"turned {kwargs['entity_id']} {kwargs['event_new_state']}")
+               
