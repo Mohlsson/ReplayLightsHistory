@@ -1,4 +1,7 @@
 replay_lights:
   module: replay_lights
   class: ReplayLights
-  numberOfDaysBack: 7
+  numberOfDaysBack: 5
+  deviceType: "switch"
+  enableTag: "input_boolean.light_replay_enabled"
+  envableVal: "on"
