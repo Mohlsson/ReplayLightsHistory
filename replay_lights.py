@@ -27,12 +27,14 @@ class ReplayLights(hass.Hass):
      try:
         self.enableTag = self.args["enableTag"]
      except KeyError:
-        self.devType = "input_boolean.light_replay_enabled"
+        self.enableTag = "input_boolean.light_replay_enabled"
      try:
         self.enableVal = self.args["enableVal"]
      except KeyError:
         self.enableVal = "on"
 
+     self.status_tab = dict()
+     
      self.run_hourly(self.scheduleNextEventBatch, datetime.now() + timedelta(seconds=5))
 
   def scheduleNextEventBatch(self,kwargs):
@@ -55,24 +57,41 @@ class ReplayLights(hass.Hass):
            event = json.loads(row[0])
            entity_id = event["entity_id"]
            event_new_state = event["new_state"]["state"]
-           # A state of unavailable happens with power is removed from a switch or plug
-           if event_new_state == 'unavailable':
-              event_new_state = 'off'
-           # If it looks like we're trying to turn something off that is off then skip it
-           if event_new_state == 'off':
-              if event["old_state"] is None:
-                continue
 
-           # pull time from database.  
-           event_trig_at = datetime.strptime(event["new_state"]["last_changed"][:-6], "%Y-%m-%dT%H:%M:%S.%f") + timedelta(days=days_back)
-           #events are in UTC so we need to conver to local time
-           from_zone = tz.tzutc()
-           to_zone = tz.tzlocal()
-           #first set the date so it knows it's UTC, and then update to local zone
-           event_trig_at = event_trig_at.replace(tzinfo=from_zone)
-           event_trig_at = event_trig_at.astimezone(to_zone)
-           self.log(f"scheduling {entity_id} to {event_new_state} at {event_trig_at}")
-           self.run_at(self.executeEvent, event_trig_at, entity_id = entity_id, event_new_state = event_new_state)
+           schedule_event = False                                                                                                                      
+           event_old_state = 'unknown'                                                                                                                 
+           # we only care when an entity goes to on or off                                                                                             
+           if event_new_state == 'on' or event_new_state == 'off':                                                                                     
+              # see if we've seen the entity before                                                                                                    
+              if entity_id in self.status_tab:                                                                                                              
+                 # we have, so has the state changed?                                                                                                  
+                 if self.status_tab[ entity_id ] != event_new_state:                                                                                        
+                    # Yes so then update table an schedule event                                                                                       
+                    #self.log(f"Updating {entity_id} from state {self.status_tab[ entity_id ]} to {event_new_state}")                                          
+                    event_old_state = self.status_tab[ entity_id ]                                                                                          
+                    self.status_tab[ entity_id ] = event_new_state                                                
+                    schedule_event = True                                                                    
+              else:                                                                                          
+                 # we have not so add it to the table                                                        
+                 self.log(f"First seen {entity_id}, adding to state table with state {event_new_state}")                                  
+                 self.status_tab[ entity_id ] = event_new_state                                                   
+                 schedule_event = True                                                                       
+
+           if schedule_event:                                                                                                                          
+              # pull time from database entry.                                                                                                         
+              try:                                                                                                                                     
+                event_trig_at = datetime.strptime(event["new_state"]["last_changed"][:-6], "%Y-%m-%dT%H:%M:%S.%f") + timedelta(days=days_back)       
+              except TypeError:                                                                                                                        
+                event_trig_at = datetime.strptime(event["old_state"]["last_changed"][:-6], "%Y-%m-%dT%H:%M:%S.%f") + timedelta(days=days_back)        
+
+              #events are in UTC so we need to conver to local time                                                                                    
+              from_zone = tz.tzutc()                                                                                                                   
+              to_zone = tz.tzlocal()                                                                                                            
+              #first set the date so it knows it's UTC, and then update to local zone                                                           
+              event_trig_at = event_trig_at.replace(tzinfo=from_zone)                                                                           
+              event_trig_at = event_trig_at.astimezone(to_zone)                                                                                 
+              self.log(f"scheduling {entity_id} from {event_old_state} to {event_new_state} at {event_trig_at}")
+              self.run_at(self.executeEvent, event_trig_at, entity_id = entity_id, event_new_state = event_new_state)
         except KeyError:
            self.log(f"failed to parse {row}")
 
@@ -85,3 +104,4 @@ class ReplayLights(hass.Hass):
         self.log(f"turned {kwargs['entity_id']} {kwargs['event_new_state']}")
      else:
         self.log(f"did not turn {kwargs['entity_id']} {kwargs['event_new_state']} because input_boolean.light_replay_enabled is not on")
+               
