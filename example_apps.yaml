@@ -4,4 +4,4 @@ replay_lights:
   numberOfDaysBack: 5
   deviceType: "switch"
   enableTag: "input_boolean.light_replay_enabled"
-  envableVal: "on"
+  enableVal: "on"
