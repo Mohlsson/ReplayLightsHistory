@@ -32,6 +32,10 @@ class ReplayLights(hass.Hass):
         self.enableVal = self.args["enableVal"]
      except KeyError:
         self.enableVal = "on"
+     try:
+        self.plugsOnSwitch = self.args["smartControlledByDumb"].split(",")
+     except KeyError:
+        self.plugsOnSwitch = None
 
      self.status_tab = dict()
      
@@ -57,6 +61,16 @@ class ReplayLights(hass.Hass):
            event = json.loads(row[0])
            entity_id = event["entity_id"]
            event_new_state = event["new_state"]["state"]
+
+           # For smart plugs that on a wall switch we need to consider unavailable as a transistion to off
+           if event_new_state == 'unavailable':         
+              try:                                      
+                 self.plugsOnSwitch.index( entity_id )             
+                 event_new_state = 'off'                
+                 #self.log(f"Switched unavailable to off for {entity_id}")
+              except (ValueError, AttributeError):                                      
+                 i=0   # entify wasn't in the list so this is a do nothing                         
+ 
 
            schedule_event = False                                                                                                                      
            event_old_state = 'unknown'                                                                                                                 
