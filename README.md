@@ -32,4 +32,3 @@ All of the parameters are optional.  Their use follows:
 
 * smartControlledByDumb – If you have smart light bulbs or smart plugs there is a possibility that a dumb switch could be inline.  If used the dumb switch would could remove power from the device.  If someone turns the dumb switch off then the device will be assigned a status of “unavailable” in Home Assistant instead of off.  This parameter tells the application which devices can be disabled by dumb switches.  This is a comma separated list.  In the example configuration above it shows two smart plugs that could also be powered off via a dumb switch.  If you have no devices in this situation then this parameter isn’t required.
      
-
