@@ -36,6 +36,10 @@ class ReplayLights(hass.Hass):
         self.plugsOnSwitch = self.args["smartControlledByDumb"].split(",")
      except KeyError:
         self.plugsOnSwitch = None
+     try:
+        self.excludeList = self.args["excludeList"].split(",")
+     except KeyError:
+        self.excludeList = None
 
      self.status_tab = dict()
      
@@ -60,7 +64,20 @@ class ReplayLights(hass.Hass):
         try:
            event = json.loads(row[0])
            entity_id = event["entity_id"]
-           event_new_state = event["new_state"]["state"]
+
+           #Look for entities we've been instructed to ignore and skip them
+           try:                                      
+              self.excludeList.index( entity_id )             
+              self.log(f"{entity_id} on exclude list so will ignore")
+              continue
+           except (ValueError, AttributeError):                                      
+              i=0   # entify wasn't in the list so this is a do nothing                         
+
+           # If no new_state then skip this record
+           try:
+              event_new_state = event["new_state"]["state"]
+           except TypeError:
+              continue
 
            # For smart plugs that on a wall switch we need to consider unavailable as a transistion to off
            if event_new_state == 'unavailable':         
