@@ -4,7 +4,6 @@ import os
 import json
 from datetime import datetime
 from datetime import timedelta
-from dateutil import tz
 
 #
 # Replay Light History when Away
@@ -115,12 +114,9 @@ class ReplayLights(hass.Hass):
               except TypeError:                                                                                                                        
                 event_trig_at = datetime.strptime(event["old_state"]["last_changed"][:-6], "%Y-%m-%dT%H:%M:%S.%f") + timedelta(days=days_back)        
 
-              #events are in UTC so we need to conver to local time                                                                                    
-              from_zone = tz.tzutc()                                                                                                                   
-              to_zone = tz.tzlocal()                                                                                                            
-              #first set the date so it knows it's UTC, and then update to local zone                                                           
-              event_trig_at = event_trig_at.replace(tzinfo=from_zone)                                                                           
-              event_trig_at = event_trig_at.astimezone(to_zone)                                                                                 
+              #events are in UTC so we need to conver to local time
+              event_trig_at += timedelta(minutes=self.get_tz_offset())
+
               self.log(f"scheduling {entity_id} from {event_old_state} to {event_new_state} at {event_trig_at}")
               self.run_at(self.executeEvent, event_trig_at, entity_id = entity_id, event_new_state = event_new_state)
         except KeyError:
