@@ -8,7 +8,7 @@ replay_lights:
   class: ReplayLights
 
 A maximum configuration can include the following lines, modified for your install:
-
+```
 replay_lights:
   module: replay_lights
   class: ReplayLights
@@ -17,6 +17,8 @@ replay_lights:
   enableTag: "alarm_control.home_alarm"
   enableVal: "armed_away"
   smartControlledByDumb: "switch.master_bed,switch.living_room_lamp"
+  excludeList: "switch.garage,switch.garagecam"
+```
 
 example_apps.yaml in the repo includes similar records
 
@@ -31,4 +33,6 @@ All of the parameters are optional.  Their use follows:
 * enableVal – This is the “state” value the “enableTag” must have in order for the app to actually turn something on or off. For the default enableTag, "input_boolean.light_replay_enabled", a state value of “on” would indicate that the app should controls the smart devices. As mentioned above if you created a group of persons and you wanted control to happen when they were all away from home then this parameter would be set to “away”.  The default for this field is “on”
 
 * smartControlledByDumb – If you have smart light bulbs or smart plugs there is a possibility that a dumb switch could be inline.  If used the dumb switch would could remove power from the device.  If someone turns the dumb switch off then the device will be assigned a status of “unavailable” in Home Assistant instead of off.  This parameter tells the application which devices can be disabled by dumb switches.  This is a comma separated list.  In the example configuration above it shows two smart plugs that could also be powered off via a dumb switch.  If you have no devices in this situation then this parameter isn’t required.
+
+* excludeList - This is a comma separated list of switches you don't want included in the replay action, such as a switch on your garage or maybe a basement light you don't want to have turned on while you're out.
      
