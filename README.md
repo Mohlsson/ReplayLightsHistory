@@ -1,4 +1,4 @@
-# ReplayLightsHistory
+# ReplayLightsHistory [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/custom-components/hacs)
 This is an AppDaemon App for Home Assistant that is designed to replays your lights behavior when no one is home.  There are multiple other approaches out there that try to simulate behavior, which is hard.  This approach simply uses your smart devices previous behavior to control their pending behavior. As the code exist today it has been tested with lights and smart switches.  The smart switches include TP Link smart switches and plugs, as they are both labeled switch entities in Home Assistant. It currently can only be configured to control one category of entities, which is specified in the configuration information.
 
 Manually installing this AppDaemon App is relatively simply.  The replay_lights.py file needs to be placed in the appdaemon/apps/ directory on your Home assistant install.  Then you need to added lines to the appdaemon/apps/apps.yaml file to enable this application. At a minimum you would add these lines to the file apps/yaml file:
