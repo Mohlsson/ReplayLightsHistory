@@ -16,6 +16,11 @@ class ReplayLights(hass.Hass):
   def initialize(self):
      self.log("started")
      try:
+        self.hassDir = self.args["hassDir"]
+     except KeyError:
+        self.hassDir = "/config"
+        self.log("Defaulting Home Assistant config directory to {}".format(self.hassDir))
+     try:
         self.numberOfDaysBack = self.args["numberOfDaysBack"]
      except KeyError:
         self.numberOfDaysBack = 7
@@ -53,8 +58,7 @@ class ReplayLights(hass.Hass):
         days_back = self.numberOfDaysBack
 
      self.log("Scheduling Replaying "+str(days_back)+ " day[s] back")
-
-     conn = sqlite3.connect('/config/home-assistant_v2.db')
+     conn = sqlite3.connect("{}/home-assistant_v2.db".format(self.hassDir))
      c = conn.cursor()
      for row in c.execute(f'SELECT event_data FROM events WHERE event_type="state_changed" AND time_fired > \
                           datetime("now","-{days_back} days","+1 minutes") AND \
@@ -69,7 +73,7 @@ class ReplayLights(hass.Hass):
               self.excludeList.index( entity_id )             
               self.log(f"{entity_id} on exclude list so will ignore")
               continue
-           except (ValueError, AttributeError):                                      
+           except (ValueError, AttributeError):
               i=0   # entify wasn't in the list so this is a do nothing                         
 
            # If no new_state then skip this record

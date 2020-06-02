@@ -10,6 +10,7 @@ replay_lights:
 A maximum configuration can include the following lines, modified for your install:
 ```
 replay_lights:
+  hasDir: '/home/jondoe/.homeassistant'
   module: replay_lights
   class: ReplayLights
   numberOfDaysBack: 7
@@ -24,6 +25,8 @@ example_apps.yaml in the repo includes similar records
 
 All of the parameters are optional.  Their use follows:
 
+* hassDir - Home Assistant config directory (assumed to have home-assistant_v2.db in there). Defaults /config.
+
 * numberOfDaysBack – this value that indicates how many days back in time the application should look for behavior that is to be replayed. This value can also be provided as a Home Assistant input number entity named input_number.replay_days_back.  The advantage of specifying the value as an input number is that you can then change the value via the Home Assistant Lovelace interface.  From a precedent perspective the application first looks for the input number entity, it looks for numberOfDaysBack from the apps.yaml file and finally if neither of these value is defined it uses the default of 7 days back.
 
 * deviceType – this has been tested with “switch” and “light”. It’s possible that it could work with other entity types.  If not specified in the configuration, the default is “switch”.  You can determine this value by looking at the entities off the configuration panel in your Home Assistant user interface.  All of the devices you want to control will start with this label.  
@@ -35,4 +38,3 @@ All of the parameters are optional.  Their use follows:
 * smartControlledByDumb – If you have smart light bulbs or smart plugs there is a possibility that a dumb switch could be inline.  If used the dumb switch would could remove power from the device.  If someone turns the dumb switch off then the device will be assigned a status of “unavailable” in Home Assistant instead of off.  This parameter tells the application which devices can be disabled by dumb switches.  This is a comma separated list.  In the example configuration above it shows two smart plugs that could also be powered off via a dumb switch.  If you have no devices in this situation then this parameter isn’t required.
 
 * excludeList - This is a comma separated list of switches you don't want included in the replay action, such as a switch on your garage or maybe a basement light you don't want to have turned on while you're out.
-     
