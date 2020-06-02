@@ -10,7 +10,7 @@ replay_lights:
 A maximum configuration can include the following lines, modified for your install:
 ```
 replay_lights:
-  hasDir: '/home/jondoe/.homeassistant'
+  hassDir: '/home/jondoe/.homeassistant'
   module: replay_lights
   class: ReplayLights
   numberOfDaysBack: 7
