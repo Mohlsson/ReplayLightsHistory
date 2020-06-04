@@ -1,4 +1,4 @@
-import appdaemon.plugins.hass.hassapi as hass
+import appdaemon.plugins.hass.hassapi as hass, pymysql.cursors
 import sqlite3
 import os
 import json
@@ -20,6 +20,16 @@ class ReplayLights(hass.Hass):
      except KeyError:
         self.hassDir = "/config"
         self.log("Defaulting Home Assistant config directory to {}".format(self.hassDir))
+     try:
+         self.databaseType=self.args["databaseType"]
+     except KeyError:
+        self.databaseType = "sqlite3"
+        self.log("Defaulting Database Type to {}".format(self.databaseType))
+     try:
+         self.databaseConnection=self.args["databaseConnection"]
+     except KeyError:
+        if databaseType == 'MariaDB':
+            self.log("databaseConnection parameter is needed for MariaDB")
      try:
         self.numberOfDaysBack = self.args["numberOfDaysBack"]
      except KeyError:
@@ -58,12 +68,27 @@ class ReplayLights(hass.Hass):
         days_back = self.numberOfDaysBack
 
      self.log("Scheduling Replaying "+str(days_back)+ " day[s] back")
-     conn = sqlite3.connect("{}/home-assistant_v2.db".format(self.hassDir))
-     c = conn.cursor()
-     for row in c.execute(f'SELECT event_data FROM events WHERE event_type="state_changed" AND time_fired > \
+     if databaseType == 'sqlite3':
+        conn = sqlite3.connect("{}/home-assistant_v2.db".format(self.hassDir))
+        c = conn.cursor()
+        result=c.execute(f'SELECT event_data FROM events WHERE event_type="state_changed" AND time_fired > \
                           datetime("now","-{days_back} days","+1 minutes") AND \
                           time_fired < datetime("now","-{days_back} days","+61 minutes") AND \
                           event_data like "%{self.devType}%" AND NOT event_data like "%group%" AND NOT event_data like "%group%" AND NOT event_data like "%scene%"'):
+        c.close()
+     if databaseType == 'MariaDB':
+        conn = pymysql.connect(databaseConnection)
+        self.log("Connection to MariaDB was succesfull")
+        query = f'SELECT event_data FROM events WHERE event_type="state_changed" \
+             AND time_fired > DATE_ADD(DATE_ADD(NOW(),INTERVAL -{days_back} DAY), INTERVAL 1 MINUTE) \
+             AND time_fired < DATE_ADD(DATE_ADD(NOW(),INTERVAL -{days_back} DAY), INTERVAL 61 MINUTE) \
+             AND event_data like "%{self.devType}%" AND NOT event_data like "%group%" AND NOT event_data like "%automation%" AND NOT event_data like "%scene%"'
+         with conn.cursor() as cursor:
+            cursor.execute(query)
+            result = cursor.fetchall()
+         conn.close()
+     
+     for row in result
         try:
            event = json.loads(row[0])
            entity_id = event["entity_id"]
@@ -126,7 +151,7 @@ class ReplayLights(hass.Hass):
         except KeyError:
            self.log(f"failed to parse {row}")
 
-     c.close()
+
 
   def executeEvent(self, kwargs):
      replay_enable = self.get_state(self.enableTag)
