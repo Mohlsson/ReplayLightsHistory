@@ -82,7 +82,7 @@ class ReplayLights(hass.Hass):
         result=c.execute(f'SELECT event_data FROM events WHERE event_type="state_changed" AND time_fired > \
                           datetime("now","-{days_back} days","+1 minutes") AND \
                           time_fired < datetime("now","-{days_back} days","+61 minutes") AND \
-                          event_data like "%{self.devType}%" AND NOT event_data like "%group%" AND NOT event_data like "%group%" AND NOT event_data like "%scene%"')
+                          event_data like "%{self.devType}%" AND NOT event_data like "%group%" AND NOT event_data like "%automation%" AND NOT event_data like "%sensor%" AND NOT event_data like "%scene%"')
         c.close()
      if databaseType == 'MariaDB':
         conn = pymysql.connect(host='core-mariadb', user=self.databaseUser, password=self.databasePassword, db='homeassistant', charset='utf8')
@@ -90,7 +90,7 @@ class ReplayLights(hass.Hass):
         query = f'SELECT event_data FROM events WHERE event_type="state_changed" \
              AND time_fired > DATE_ADD(DATE_ADD(UTC_TIMESTAMP(),INTERVAL -{days_back} DAY), INTERVAL 1 MINUTE) \
              AND time_fired < DATE_ADD(DATE_ADD(UTC_TIMESTAMP(),INTERVAL -{days_back} DAY), INTERVAL 61 MINUTE) \
-             AND event_data like "%{self.devType}%" AND NOT event_data like "%group%" AND NOT event_data like "%automation%" AND NOT event_data like "%scene%"'
+             AND event_data like "%{self.devType}%" AND NOT event_data like "%group%" AND NOT event_data like "%automation%" AND NOT event_data like "%sensor%" AND NOT event_data like "%scene%"'
         with conn.cursor() as cursor:
             cursor.execute(query)
             result = cursor.fetchall()
