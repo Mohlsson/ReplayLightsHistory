@@ -1,4 +1,5 @@
-import appdaemon.plugins.hass.hassapi as hass
+import appdaemon.plugins.hass.hassapi as hass 
+import pymysql.cursors
 import sqlite3
 import os
 import json
@@ -20,6 +21,22 @@ class ReplayLights(hass.Hass):
      except KeyError:
         self.hassDir = "/config"
         self.log("Defaulting Home Assistant config directory to {}".format(self.hassDir))
+     try:
+         self.databaseType = self.args["databaseType"]
+     except KeyError:
+        self.databaseType = "sqlite3"
+        self.log("Defaulting Database Type to {}".format(self.databaseType))
+     try:
+         self.databaseUser= self.args["databaseUser"]
+     except KeyError:
+        if self.databaseType == 'MariaDB':
+            self.databaseUser = 'homeassistant'
+            self.log("Defaulting databaseUser to homeassistant")
+     try:
+         self.databasePassword= self.args["databasePassword"]
+     except KeyError:
+        if self.databaseType == 'MariaDB':
+            self.log("Database password is needed for MariaDB")
      try:
         self.numberOfDaysBack = self.args["numberOfDaysBack"]
      except KeyError:
@@ -50,7 +67,8 @@ class ReplayLights(hass.Hass):
      self.run_hourly(self.scheduleNextEventBatch, datetime.now() + timedelta(seconds=5))
 
   def scheduleNextEventBatch(self,kwargs):
-
+     databaseType=self.databaseType
+     
      # set replay time based on input_number, or config file or default to 7
      try:
         days_back = int(float(self.get_state("input_number.replay_days_back")))
@@ -58,12 +76,27 @@ class ReplayLights(hass.Hass):
         days_back = self.numberOfDaysBack
 
      self.log("Scheduling Replaying "+str(days_back)+ " day[s] back")
-     conn = sqlite3.connect("{}/home-assistant_v2.db".format(self.hassDir))
-     c = conn.cursor()
-     for row in c.execute(f'SELECT event_data FROM events WHERE event_type="state_changed" AND time_fired > \
+     if databaseType == 'sqlite3':
+        conn = sqlite3.connect("{}/home-assistant_v2.db".format(self.hassDir))
+        c = conn.cursor()
+        result=c.execute(f'SELECT event_data FROM events WHERE event_type="state_changed" AND time_fired > \
                           datetime("now","-{days_back} days","+1 minutes") AND \
                           time_fired < datetime("now","-{days_back} days","+61 minutes") AND \
-                          event_data like "%{self.devType}%" AND NOT event_data like "%group%" AND NOT event_data like "%group%" AND NOT event_data like "%scene%"'):
+                          event_data like "%{self.devType}%" AND NOT event_data like "%group%" AND NOT event_data like "%automation%" AND NOT event_data like "%sensor%" AND NOT event_data like "%scene%"')
+        c.close()
+     if databaseType == 'MariaDB':
+        conn = pymysql.connect(host='core-mariadb', user=self.databaseUser, password=self.databasePassword, db='homeassistant', charset='utf8')
+        self.log("Connection to MariaDB was succesfull")
+        query = f'SELECT event_data FROM events WHERE event_type="state_changed" \
+             AND time_fired > DATE_ADD(DATE_ADD(UTC_TIMESTAMP(),INTERVAL -{days_back} DAY), INTERVAL 1 MINUTE) \
+             AND time_fired < DATE_ADD(DATE_ADD(UTC_TIMESTAMP(),INTERVAL -{days_back} DAY), INTERVAL 61 MINUTE) \
+             AND event_data like "%{self.devType}%" AND NOT event_data like "%group%" AND NOT event_data like "%automation%" AND NOT event_data like "%sensor%" AND NOT event_data like "%scene%"'
+        with conn.cursor() as cursor:
+            cursor.execute(query)
+            result = cursor.fetchall()
+        conn.close()
+     
+     for row in result:
         try:
            event = json.loads(row[0])
            entity_id = event["entity_id"]
@@ -126,7 +159,7 @@ class ReplayLights(hass.Hass):
         except KeyError:
            self.log(f"failed to parse {row}")
 
-     c.close()
+
 
   def executeEvent(self, kwargs):
      replay_enable = self.get_state(self.enableTag)
