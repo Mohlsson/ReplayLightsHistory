@@ -88,8 +88,8 @@ class ReplayLights(hass.Hass):
         conn = pymysql.connect(host='core-mariadb', user=self.databaseUser, password=self.databasePassword, db='homeassistant', charset='utf8')
         self.log("Connection to MariaDB was succesfull")
         query = f'SELECT event_data FROM events WHERE event_type="state_changed" \
-             AND time_fired > DATE_ADD(DATE_ADD(NOW(),INTERVAL -{days_back} DAY), INTERVAL 1 MINUTE) \
-             AND time_fired < DATE_ADD(DATE_ADD(NOW(),INTERVAL -{days_back} DAY), INTERVAL 61 MINUTE) \
+             AND time_fired > DATE_ADD(DATE_ADD(UTC_TIMESTAMP(),INTERVAL -{days_back} DAY), INTERVAL 1 MINUTE) \
+             AND time_fired < DATE_ADD(DATE_ADD(UTC_TIMESTAMP(),INTERVAL -{days_back} DAY), INTERVAL 61 MINUTE) \
              AND event_data like "%{self.devType}%" AND NOT event_data like "%group%" AND NOT event_data like "%automation%" AND NOT event_data like "%scene%"'
         with conn.cursor() as cursor:
             cursor.execute(query)
