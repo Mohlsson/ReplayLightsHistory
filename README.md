@@ -12,7 +12,8 @@ A maximum configuration can include the following lines, modified for your insta
 replay_lights:
   hassDir: '/home/jondoe/.homeassistant'
   databaseType: sqlite3
-  databaseConnection: host='core-mariadb', user='homeassistant', password='PASSWORD', db='homeassistant', charset='utf8'
+  databaseUser: "homeassistant"
+  databasePassword: "PASSWORD"
   module: replay_lights
   class: ReplayLights
   numberOfDaysBack: 7
