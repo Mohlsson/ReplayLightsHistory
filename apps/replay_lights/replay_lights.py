@@ -79,27 +79,24 @@ class ReplayLights(hass.Hass):
      if databaseType == 'sqlite3':
         conn = sqlite3.connect("{}/home-assistant_v2.db".format(self.hassDir))
         c = conn.cursor()
-        result=c.execute(f'SELECT event_data FROM events WHERE event_type="state_changed" AND time_fired > \
-                          datetime("now","-{days_back} days","+1 minutes") AND \
-                          time_fired < datetime("now","-{days_back} days","+61 minutes") AND \
-                          event_data like "%{self.devType}%" AND NOT event_data like "%group%" AND NOT event_data like "%automation%" AND NOT event_data like "%sensor%" AND NOT event_data like "%scene%"')
-        c.close()
+        result=c.execute(f'SELECT entity_id, state, created FROM states WHERE domain="{self.devType}" AND created > \
+                          datetime("now","-{days_back} days","+1 minutes") AND created < datetime("now","-{days_back} days","+61 minutes")')
+        #result=c.execute(f'SELECT event_data FROM events WHERE event_type="state_changed" AND time_fired > \
+        #                  datetime("now","-{days_back} days","+1 minutes") AND \
+        #                  time_fired < datetime("now","-{days_back} days","+61 minutes") AND \
+        #                  event_data like "%{self.devType}%" AND NOT event_data like "%group%" AND NOT event_data like "%automation%" AND NOT event_data like "%sensor%" AND NOT event_data like "%scene%"')
      if databaseType == 'MariaDB':
         conn = pymysql.connect(host='core-mariadb', user=self.databaseUser, password=self.databasePassword, db='homeassistant', charset='utf8')
         self.log("Connection to MariaDB was succesfull")
-        query = f'SELECT event_data FROM events WHERE event_type="state_changed" \
-             AND time_fired > DATE_ADD(DATE_ADD(UTC_TIMESTAMP(),INTERVAL -{days_back} DAY), INTERVAL 1 MINUTE) \
-             AND time_fired < DATE_ADD(DATE_ADD(UTC_TIMESTAMP(),INTERVAL -{days_back} DAY), INTERVAL 61 MINUTE) \
-             AND event_data like "%{self.devType}%" AND NOT event_data like "%group%" AND NOT event_data like "%automation%" AND NOT event_data like "%sensor%" AND NOT event_data like "%scene%"'
+        query = f'SELECT entity_id, state, created FROM states WHERE domain="{self.devType}" \
+             AND created > DATE_ADD(DATE_ADD(UTC_TIMESTAMP(),INTERVAL -{days_back} DAY), INTERVAL 1 MINUTE) \
+             AND created < DATE_ADD(DATE_ADD(UTC_TIMESTAMP(),INTERVAL -{days_back} DAY), INTERVAL 61 MINUTE)' 
         with conn.cursor() as cursor:
             cursor.execute(query)
             result = cursor.fetchall()
-        conn.close()
      
-     for row in result:
+     for entity_id, event_new_state, c_date in result:
         try:
-           event = json.loads(row[0])
-           entity_id = event["entity_id"]
 
            #Look for entities we've been instructed to ignore and skip them
            try:                                      
@@ -108,12 +105,6 @@ class ReplayLights(hass.Hass):
               continue
            except (ValueError, AttributeError):
               i=0   # entify wasn't in the list so this is a do nothing                         
-
-           # If no new_state then skip this record
-           try:
-              event_new_state = event["new_state"]["state"]
-           except TypeError:
-              continue
 
            # For smart plugs that on a wall switch we need to consider unavailable as a transistion to off
            if event_new_state == 'unavailable':         
@@ -147,9 +138,10 @@ class ReplayLights(hass.Hass):
            if schedule_event:                                                                                                                          
               # pull time from database entry.                                                                                                         
               try:                                                                                                                                     
-                event_trig_at = datetime.strptime(event["new_state"]["last_changed"][:-6], "%Y-%m-%dT%H:%M:%S.%f") + timedelta(days=days_back)       
+                event_trig_at = datetime.strptime(c_date, "%Y-%m-%d %H:%M:%S.%f") + timedelta(days=days_back)
               except TypeError:                                                                                                                        
-                event_trig_at = datetime.strptime(event["old_state"]["last_changed"][:-6], "%Y-%m-%dT%H:%M:%S.%f") + timedelta(days=days_back)        
+                self.log("Date field from database didn't parse correctly so skipping record")                                                                                                               
+                continue
 
               #events are in UTC so we need to conver to local time
               event_trig_at += timedelta(minutes=self.get_tz_offset())
@@ -159,6 +151,7 @@ class ReplayLights(hass.Hass):
         except KeyError:
            self.log(f"failed to parse {row}")
 
+     conn.close()
 
 
   def executeEvent(self, kwargs):
@@ -168,4 +161,3 @@ class ReplayLights(hass.Hass):
         self.log(f"turned {kwargs['entity_id']} {kwargs['event_new_state']}")
      else:
         self.log(f"did not turn {kwargs['entity_id']} {kwargs['event_new_state']} because input_boolean.light_replay_enabled is not on")
-               
