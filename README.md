@@ -1,5 +1,5 @@
 # ReplayLightsHistory [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/custom-components/hacs)
-This is an AppDaemon App for Home Assistant that is designed to replays your lights behavior when no one is home.  There are multiple other approaches out there that try to simulate behavior, which is hard.  This approach simply uses your smart devices previous behavior to control their pending behavior. As the code exist today it has been tested with lights and smart switches.  The smart switches include TP Link smart switches and plugs, as they are both labeled switch entities in Home Assistant. It currently can only be configured to control one category of entities, which is specified in the configuration information.
+This is an AppDaemon App for Home Assistant that is designed to replays your lights behavior when no one is home.  There are multiple other approaches out there that try to simulate behavior, which is hard.  This approach simply uses your smart devices previous behavior to control their pending behavior. As the code exist today it has been tested with lights and smart switches.  The smart switches include TP Link smart switches and plugs, as they are both labeled switch entities in Home Assistant. It has also been used with shelly 2 switches.  It currently can only be configured to control one category of entities, which is specified in the configuration information.
 
 Manually installing this AppDaemon App is relatively simply.  The replay_lights.py file needs to be placed in the appdaemon/apps/ directory on your Home assistant install.  Then you need to added lines to the appdaemon/apps/apps.yaml file to enable this application. At a minimum you would add these lines to the file apps/yaml file:
 
@@ -47,3 +47,14 @@ All of the parameters are optional.  Their use follows:
 * smartControlledByDumb – If you have smart light bulbs or smart plugs there is a possibility that a dumb switch could be inline.  If used the dumb switch would could remove power from the device.  If someone turns the dumb switch off then the device will be assigned a status of “unavailable” in Home Assistant instead of off.  This parameter tells the application which devices can be disabled by dumb switches.  This is a comma separated list.  In the example configuration above it shows two smart plugs that could also be powered off via a dumb switch.  If you have no devices in this situation then this parameter isn’t required.
 
 * excludeList - This is a comma separated list of switches you don't want included in the replay action, such as a switch on your garage or maybe a basement light you don't want to have turned on while you're out.
+
+NOTE: A recent update added the ability to use MariaDB instead of sqlite3.  This change requires the python package to be included in your appdaemon docker container.  You include PyMySQL by adding it to the addons.json file found in the home assistant base directory.  The modified lines look like this:
+```
+"options": {
+"system_packages": [],
+"python_packages": [
+"PyMySQL"
+],
+"init_commands": []
+},
+```
