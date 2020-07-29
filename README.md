@@ -48,13 +48,11 @@ All of the parameters are optional.  Their use follows:
 
 * excludeList - This is a comma separated list of switches you don't want included in the replay action, such as a switch on your garage or maybe a basement light you don't want to have turned on while you're out.
 
-NOTE: A recent update added the ability to use MariaDB instead of sqlite3.  This change requires the python package to be included in your appdaemon docker container.  You include PyMySQL by adding it to the addons.json file found in the home assistant base directory.  The modified lines look like this:
+NOTE: A recent update added the ability to use MariaDB as an alternative to sqlite3.  This change requires the python package to be included in your appdaemon docker container.  You include PyMySQL by adding it to the addons.json file found in the home assistant base directory.  The easist way to make this modification is directly from the Home Assistant GUI.  From Supervisor -> AppDaemon -> Configuration you can update the configuration to look like this:
 ```
-"options": {
-"system_packages": [],
-"python_packages": [
-"PyMySQL"
-],
-"init_commands": []
-},
+system_packages: []
+python_packages:
+  - PyMySQL
+init_commands: []
 ```
+For the change to take effect you need to restart AppDaemon, which can be done from the AppDaemon Info tab.
