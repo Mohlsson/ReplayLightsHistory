@@ -90,7 +90,7 @@ class ReplayLights(hass.Hass):
         self.log("Connection to MariaDB was succesfull")
         query = f'SELECT entity_id, state, created FROM states WHERE domain="{self.devType}" \
              AND created > DATE_ADD(DATE_ADD(UTC_TIMESTAMP(),INTERVAL -{days_back} DAY), INTERVAL 1 MINUTE) \
-             AND created < DATE_ADD(DATE_ADD(UTC_TIMESTAMP(),INTERVAL -{days_back} DAY), INTERVAL 61 MINUTE)' 
+             AND created <= DATE_ADD(DATE_ADD(UTC_TIMESTAMP(),INTERVAL -{days_back} DAY), INTERVAL 61 MINUTE)' 
         with conn.cursor() as cursor:
             cursor.execute(query)
             result = cursor.fetchall()
@@ -137,8 +137,12 @@ class ReplayLights(hass.Hass):
 
            if schedule_event:                                                                                                                          
               # pull time from database entry.                                                                                                         
-              try:                                                                                                                                     
-                event_trig_at = datetime.strptime(c_date, "%Y-%m-%d %H:%M:%S.%f") + timedelta(days=days_back)
+              try:
+                if databaseType == 'sqlite3':
+                    event_trig_at = datetime.strptime(c_date, "%Y-%m-%d %H:%M:%S.%f") + timedelta(days=days_back)
+                if databaseType == 'MariaDB':
+                    event_trig_at = c_date+ timedelta(days=days_back)
+                   
               except TypeError:                                                                                                                        
                 self.log("Date field from database didn't parse correctly so skipping record")                                                                                                               
                 continue
