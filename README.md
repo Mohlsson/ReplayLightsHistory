@@ -12,8 +12,10 @@ A maximum configuration can include the following lines, modified for your insta
 replay_lights:
   hassDir: '/home/jondoe/.homeassistant'
   databaseType: sqlite3
+  databaseHost: "localhost"
   databaseUser: "homeassistant"
   databasePassword: "PASSWORD"
+  databaseSchema: "homeassistant"
   module: replay_lights
   class: ReplayLights
   numberOfDaysBack: 7
@@ -32,9 +34,13 @@ All of the parameters are optional.  Their use follows:
 
 * databaseType - Defines database type either sqlite3 which is default or MariaDB
 
+* databaseHost - Hostname or IP address of host where MariaDB is installed (optional, default localhost)
+
 * databaseUser -  User for MariaDB defaults to homeassistant
 
 * databasePassword - Password for MariaDB
+
+* databaseSchema - Name of DB schema akka database name. This is normally same as user name. (optional, default homeassistant)
 
 * numberOfDaysBack – this value that indicates how many days back in time the application should look for behavior that is to be replayed. This value can also be provided as a Home Assistant input number entity named input_number.replay_days_back.  The advantage of specifying the value as an input number is that you can then change the value via the Home Assistant Lovelace interface.  From a precedent perspective the application first looks for the input number entity, it looks for numberOfDaysBack from the apps.yaml file and finally if neither of these value is defined it uses the default of 7 days back.
 

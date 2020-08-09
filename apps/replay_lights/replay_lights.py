@@ -27,6 +27,11 @@ class ReplayLights(hass.Hass):
         self.databaseType = "sqlite3"
         self.log("Defaulting Database Type to {}".format(self.databaseType))
      try:
+         self.databaseHost = self.args["databaseHost"]
+     except KeyError:
+        self.databaseHost = "localhost"
+        self.log("Defaulting Database Host to {}".format(self.databaseHost))
+     try:
          self.databaseUser= self.args["databaseUser"]
      except KeyError:
         if self.databaseType == 'MariaDB':
@@ -37,6 +42,11 @@ class ReplayLights(hass.Hass):
      except KeyError:
         if self.databaseType == 'MariaDB':
             self.log("Database password is needed for MariaDB")
+     try:
+         self.databaseSchema = self.args["databaseSchema"]
+     except KeyError:
+        self.databaseSchema = "homeassistant"
+        self.log("Defaulting Database Home Assistant Schema to {}".format(self.databaseSchema))
      try:
         self.numberOfDaysBack = self.args["numberOfDaysBack"]
      except KeyError:
@@ -86,7 +96,7 @@ class ReplayLights(hass.Hass):
         #                  time_fired < datetime("now","-{days_back} days","+61 minutes") AND \
         #                  event_data like "%{self.devType}%" AND NOT event_data like "%group%" AND NOT event_data like "%automation%" AND NOT event_data like "%sensor%" AND NOT event_data like "%scene%"')
      if databaseType == 'MariaDB':
-        conn = pymysql.connect(host='core-mariadb', user=self.databaseUser, password=self.databasePassword, db='homeassistant', charset='utf8')
+        conn = pymysql.connect(host=self.databaseHost, user=self.databaseUser, password=self.databasePassword, db=self.databaseSchema, charset='utf8')
         self.log("Connection to MariaDB was succesfull")
         query = f'SELECT entity_id, state, created FROM states WHERE domain="{self.devType}" \
              AND created > DATE_ADD(DATE_ADD(UTC_TIMESTAMP(),INTERVAL -{days_back} DAY), INTERVAL 1 MINUTE) \
