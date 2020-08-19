@@ -157,13 +157,13 @@ class ReplayLights(hass.Hass):
                 self.log("Date field from database didn't parse correctly so skipping record")                                                                                                               
                 continue
 
-              #events are in UTC so we need to conver to local time
+              #events are in UTC so we need to convert to local time
               event_trig_at += timedelta(minutes=self.get_tz_offset())
 
               self.log(f"scheduling {entity_id} from {event_old_state} to {event_new_state} at {event_trig_at}")
               self.run_at(self.executeEvent, event_trig_at, entity_id = entity_id, event_new_state = event_new_state)
         except KeyError:
-           self.log(f"failed to parse {row}")
+           self.log(f"failed to parse ({entity_id}, {event_new_state}, {c_date})")
 
      conn.close()
 
@@ -174,4 +174,4 @@ class ReplayLights(hass.Hass):
         self.call_service(f"{self.devType}/turn_{kwargs['event_new_state']}", entity_id = kwargs['entity_id'])
         self.log(f"turned {kwargs['entity_id']} {kwargs['event_new_state']}")
      else:
-        self.log(f"did not turn {kwargs['entity_id']} {kwargs['event_new_state']} because input_boolean.light_replay_enabled is not on")
+        self.log(f"did not turn {kwargs['entity_id']} {kwargs['event_new_state']} because {self.enableTag} is not on")
