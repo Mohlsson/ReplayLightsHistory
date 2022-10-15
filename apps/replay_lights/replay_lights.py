@@ -89,8 +89,8 @@ class ReplayLights(hass.Hass):
      if databaseType == 'sqlite3':
         conn = sqlite3.connect("{}/home-assistant_v2.db".format(self.hassDir))
         c = conn.cursor()
-        result=c.execute(f'SELECT entity_id, state, created FROM states WHERE domain="{self.devType}" AND created > \
-                          datetime("now","-{days_back} days","+1 minutes") AND created < datetime("now","-{days_back} days","+61 minutes")')
+        result=c.execute(f'SELECT entity_id, state, last_updated FROM states WHERE entity_id LIKE "{self.devType}%" AND last_updated > \
+                         datetime("now","-{days_back} days","+1 minutes") AND last_updated < datetime("now","-{days_back} days","+61 minutes")')        
         #result=c.execute(f'SELECT event_data FROM events WHERE event_type="state_changed" AND time_fired > \
         #                  datetime("now","-{days_back} days","+1 minutes") AND \
         #                  time_fired < datetime("now","-{days_back} days","+61 minutes") AND \
