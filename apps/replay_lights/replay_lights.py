@@ -5,6 +5,7 @@ import os
 import json
 from datetime import datetime
 from datetime import timedelta
+from datetime import datetime
 
 #
 # Replay Light History when Away
@@ -89,8 +90,13 @@ class ReplayLights(hass.Hass):
      if databaseType == 'sqlite3':
         conn = sqlite3.connect("{}/home-assistant_v2.db".format(self.hassDir))
         c = conn.cursor()
-        result=c.execute(f'SELECT entity_id, state, last_updated FROM states WHERE entity_id LIKE "{self.devType}%" AND last_updated > \
-                         datetime("now","-{days_back} days","+1 minutes") AND last_updated < datetime("now","-{days_back} days","+61 minutes")')        
+        result=c.execute(f'SELECT states_meta.entity_id, states.state, states.last_updated_ts FROM states\
+                        JOIN states_meta ON states_meta.metadata_id = states.metadata_id\
+                        WHERE states_meta.entity_id LIKE "{self.devType}%"\
+                        AND states.last_updated_ts > unixepoch() + (-{days_back}*24*60*60 + 1*60)\
+                        AND states.last_updated_ts < unixepoch() + (-{days_back}*24*60*60 + 61*60)')
+        #result=c.execute(f'SELECT entity_id, state, last_updated FROM states WHERE entity_id LIKE "{self.devType}%" AND last_updated > \
+        #                 datetime("now","-{days_back} days","+1 minutes") AND last_updated < datetime("now","-{days_back} days","+61 minutes")')        
         #result=c.execute(f'SELECT event_data FROM events WHERE event_type="state_changed" AND time_fired > \
         #                  datetime("now","-{days_back} days","+1 minutes") AND \
         #                  time_fired < datetime("now","-{days_back} days","+61 minutes") AND \
@@ -104,9 +110,13 @@ class ReplayLights(hass.Hass):
         with conn.cursor() as cursor:
             cursor.execute(query)
             result = cursor.fetchall()
+            
+     #for a in result:
+     #   self.log(a)
      
      for entity_id, event_new_state, c_date in result:
         try:
+           #mtimestamp(int(float(c_date))) + timedelta(days=days_back)}")
 
            #Look for entities we've been instructed to ignore and skip them
            try:                                      
@@ -147,18 +157,19 @@ class ReplayLights(hass.Hass):
 
            if schedule_event:                                                                                                                          
               # pull time from database entry.                                                                                                         
+              # events are in UTC so we need to convert to local time
               try:
                 if databaseType == 'sqlite3':
-                    event_trig_at = datetime.strptime(c_date, "%Y-%m-%d %H:%M:%S.%f") + timedelta(days=days_back)
-                if databaseType == 'MariaDB':
-                    event_trig_at = c_date+ timedelta(days=days_back)
+                    event_trig_at = datetime.fromtimestamp(int(float(c_date))) + timedelta(days=days_back)
+                if databaseType == 'MariaB':
+                    event_trig_at = c_date + timedelta(days=days_back) + timedelta(minutes=self.get_tz_offset())
                    
               except TypeError:                                                                                                                        
                 self.log("Date field from database didn't parse correctly so skipping record")                                                                                                               
                 continue
 
               #events are in UTC so we need to convert to local time
-              event_trig_at += timedelta(minutes=self.get_tz_offset())
+              #event_trig_at += timedelta(minutes=self.get_tz_offset())
 
               self.log(f"scheduling {entity_id} from {event_old_state} to {event_new_state} at {event_trig_at}")
               self.run_at(self.executeEvent, event_trig_at, entity_id = entity_id, event_new_state = event_new_state)
@@ -171,7 +182,9 @@ class ReplayLights(hass.Hass):
   def executeEvent(self, kwargs):
      replay_enable = self.get_state(self.enableTag)
      if replay_enable == self.enableVal:
+        self.log(f"turn {self.devType}/turn_{kwargs['event_new_state']} {kwargs['entity_id']} {kwargs['event_new_state']}")
         self.call_service(f"{self.devType}/turn_{kwargs['event_new_state']}", entity_id = kwargs['entity_id'])
         self.log(f"turned {kwargs['entity_id']} {kwargs['event_new_state']}")
      else:
         self.log(f"did not turn {kwargs['entity_id']} {kwargs['event_new_state']} because {self.enableTag} is not on")
+
