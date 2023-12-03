@@ -20,7 +20,7 @@ class ReplayLights(hass.Hass):
      try:
         self.hassDir = self.args["hassDir"]
      except KeyError:
-        self.hassDir = "/config"
+        self.hassDir = "/homeassistant"
         self.log("Defaulting Home Assistant config directory to {}".format(self.hassDir))
      try:
          self.databaseType = self.args["databaseType"]
