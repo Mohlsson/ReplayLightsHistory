@@ -24,6 +24,7 @@ replay_lights:
   enableVal: "armed_away"
   smartControlledByDumb: "switch.master_bed,switch.living_room_lamp"
   excludeList: "switch.garage,switch.garagecam"
+  log_level: INFO
 ```
 
 example_apps.yaml in the repo includes similar records
@@ -53,6 +54,8 @@ All of the parameters are optional.  Their use follows:
 * smartControlledByDumb – If you have smart light bulbs or smart plugs there is a possibility that a dumb switch could be inline.  If used the dumb switch would could remove power from the device.  If someone turns the dumb switch off then the device will be assigned a status of “unavailable” in Home Assistant instead of off.  This parameter tells the application which devices can be disabled by dumb switches.  This is a comma separated list.  In the example configuration above it shows two smart plugs that could also be powered off via a dumb switch.  If you have no devices in this situation then this parameter isn’t required.
 
 * excludeList - This is a comma separated list of switches you don't want included in the replay action, such as a switch on your garage or maybe a basement light you don't want to have turned on while you're out.
+
+* log_level - This is the log level for the application. It overrides the AppDaemon log level and set a custom log level only for this application. Supported log levels: INFO, WARNING, ERROR, CRITICAL, DEBUG, NOTSET.
 
 NOTE: A recent update added the ability to use MariaDB as an alternative to sqlite3.  This change requires the python package to be included in your appdaemon docker container.  You include PyMySQL by adding it to the addons.json file found in the home assistant base directory.  The easist way to make this modification is directly from the Home Assistant GUI.  From Supervisor -> AppDaemon -> Configuration you can update the configuration to look like this:
 ```
